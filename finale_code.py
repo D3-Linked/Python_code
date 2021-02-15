@@ -14,6 +14,16 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
+# Raspberry Pi hardware SPI config + variable:
+DC = 23
+RST = 24
+SPI_PORT = 0
+SPI_DEVICE = 1
+TRIG = 4
+ECHO = 17
+gevonden_levering = {}
+disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=4000000))
+
 # Setups van de GPIO:
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -24,16 +34,6 @@ GPIO.setup(13, GPIO.OUT)
 GPIO.setup(19, GPIO.OUT)
 GPIO.setup(TRIG,GPIO.OUT)
 GPIO.setup(ECHO,GPIO.IN)
-
-# Raspberry Pi hardware SPI config:
-DC = 23
-RST = 24
-SPI_PORT = 0
-SPI_DEVICE = 1
-TRIG = 4
-ECHO = 17
-gevonden_levering = {}
-disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=4000000))
 
 # Definitie voor het inladen van de LCD:
 def lcd():
@@ -82,7 +82,6 @@ def isBezetCheck():
 	data = r.json()
 	nummer = data['nummer']
 	locatie = data['locatie']
-							
 	headers = {"Content-Type": "application/json"}
 
 	isBezet = {"nummer": nummer, "isBezet": True, "locatie": locatie}
@@ -94,7 +93,7 @@ def isBezetCheck():
 		print(response.json())
 	else:
 		response = requests.put('https://backendappproject4.azurewebsites.net/api/laadkades/1', headers=headers, json=nietBezet)
-		print(response.json())	
+		print(response.json())
 							
 	return response.json()
 
@@ -106,12 +105,13 @@ camera.close()
 
 # API voor de nummerplaatherkening:
 from pprint import pprint
-regions = ['be', 'nl'] # Kan je aanpassen naar de landen dat je zelf wil.
+# Kan je aanpassen naar de landen dat je zelf wil:
+regions = ['be', 'nl']
 foto = open('/home/pi/Project4.0/nummerplaat.jpg', 'rb')
 with foto as fp:
     response = requests.post(
         'https://api.platerecognizer.com/v1/plate-reader/',
-        data=dict(regions=regions),  # Optional
+        data=dict(regions=regions),
         files=dict(upload=fp),
         headers={'Authorization': 'Token c1848db72226e9d76e337ca0fa23d9876eaf035e'})
 os.remove("/home/pi/Project4.0/nummerplaat.jpg")
@@ -124,12 +124,13 @@ if (response.json()['results'] == []):
 	draw = lcd()
 	font = draw[2]
 		
-	# Write some text.		
+	# Schrijf tekst:		
 	draw[0].text((1,8), 'Geen nummer-', font=font)	
 	draw[0].text((1,16), 'plaat gevonden.', font=font)
-	draw[0].text((1,16), 'Probeer opnieuw!', font=font)
+	draw[0].text((1,24), 'Probeer', font=font)
+	draw[0].text((1,32), 'opnieuw!', font=font)
 		 
-	# Display image.
+	# Display image:
 	disp.image(draw[1])
 	disp.display()
 	
@@ -176,17 +177,17 @@ else:
 		draw = lcd()
 		font = draw[2]
 		
-		# Write some text.		
+		# Schrijf tekst:		
 		draw[0].text((1,8), 'Geen levering', font=font)	
 		draw[0].text((1,16), 'gevonden met', font=font)
 		draw[0].text((1,24), 'deze nummer-', font=font)
 		draw[0].text((1,32), 'plaat.', font=font)
 		 
-		# Display image.
+		# Display image:
 		disp.image(draw[1])
 		disp.display()
 		
-		time.sleep(2)
+		time.sleep(5)
 		disp.clear()
 		disp.display()
 	
@@ -196,21 +197,20 @@ else:
 		nummer = gevonden_levering['laadkade']['nummer']
 		locatie = gevonden_levering['laadkade']['locatie']
 			
-		# Hardware SPI usage:
 		disp
 		draw = lcd()
 			
-		# Load default fonts
+		# Laad default font:
 		font = ImageFont.load_default()
 			
-		# Write some text.		
+		# Schrijf tekst:		
 		draw[0].text((1,6), 'Uw nummer-', font=font)
 		draw[0].text((1,14), 'plaat is:', font=font)
 		draw[0].text((1,22), nummerplaat, font=font)		
 		draw[0].text((1,30), locatie, font=font)
 		draw[0].text((1,38), 'Laadkade ' + str(nummer), font=font)		
 			 
-		# Display image.
+		# Display image:
 		disp.image(draw[1])
 		disp.display()
 					 
@@ -277,13 +277,13 @@ else:
 		draw = lcd()
 		font = draw[2]
 		
-		# Write some text.		
+		# Schrijf tekst:	
 		draw[0].text((0,8), 'U bent niet op', font=font)	
 		draw[0].text((0,16), 'het gewenste', font=font)
 		draw[0].text((0,24), 'tijdstip', font=font)
 		draw[0].text((0,32), 'gearriveerd.', font=font)
 		 
-		# Display image.
+		# Display image:
 		disp.image(draw[1])
 		disp.display()
 		
