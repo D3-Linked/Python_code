@@ -22,6 +22,7 @@ SPI_DEVICE = 1
 TRIG = 4
 ECHO = 17
 gevonden_levering = {}
+datum_juist = 0
 disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=4000000))
 
 # Setups van de GPIO:
@@ -77,7 +78,7 @@ def isBezetCheck():
 	distance = pulse_duration * 17165
 	distance = round(distance, 1)
 	print ('Distance:',distance,'cm')
-							
+	
 	r = requests.get("https://backendappproject4.azurewebsites.net/api/laadkades/1")
 	data = r.json()
 	nummer = data['nummer']
@@ -167,11 +168,33 @@ else:
 			# Als de datum gelijk is checken we de tijd:
 			# We checken hier of de huidige tijd groter is dan huidige tijd -1 en de huidige tijd +1:
 			# M.a.w. zit de huidige tijd tussen een uur ervoor en erna, buffer voor vrachtwagen:
+			datum_juist = 1
 			if (tijd_ts >= tijd_ts_min and tijd_ts <= tijd_ts_plus):
 				gevonden_levering = levering
 	
+	if(gevonden_levering == {} and datum_juist == 1): 
+		datum_juist = 0
+		disp
+		draw = lcd()
+		font = draw[2]
+		
+		# Schrijf tekst:	
+		draw[0].text((0,8), 'U bent niet op', font=font)	
+		draw[0].text((0,16), 'het gewenste', font=font)
+		draw[0].text((0,24), 'tijdstip', font=font)
+		draw[0].text((0,32), 'gearriveerd.', font=font)
+		 
+		# Display image:
+		disp.image(draw[1])
+		disp.display()
+		
+		time.sleep(5)
+		disp.clear()
+		disp.display()	
+		
 	# Als de data leeg is of de gevonden_levering is leeg of als isCompleet op True is gezet:
-	if (data == [] or gevonden_levering == {} or gevonden_levering['isCompleet'] == True):
+	elif (data == [] or gevonden_levering == {} or gevonden_levering['isCompleet'] == True):	
+		datum_juist = 0
 		print("Geen levering met deze nummerplaat gevonden.")
 		disp
 		draw = lcd()
@@ -271,22 +294,3 @@ else:
 						
 							# Spring naar andere een code:
 							os.system("python3 opnieuw_scannen.py")
-	
-	else: 
-		disp
-		draw = lcd()
-		font = draw[2]
-		
-		# Schrijf tekst:	
-		draw[0].text((0,8), 'U bent niet op', font=font)	
-		draw[0].text((0,16), 'het gewenste', font=font)
-		draw[0].text((0,24), 'tijdstip', font=font)
-		draw[0].text((0,32), 'gearriveerd.', font=font)
-		 
-		# Display image:
-		disp.image(draw[1])
-		disp.display()
-		
-		time.sleep(5)
-		disp.clear()
-		disp.display()	
